@@ -27,7 +27,7 @@ def get_features_3gram(data):
 
 def get_features_4char_gram(data):
 	"""
-		Creates a vector of normalized (tf-idf) features from a 3-gram bag of words
+		Creates a vector of normalized (tf-idf) features from a char-4-gram bag of words
 	"""
 	feat = []
 	vectorizer = CountVectorizer(analyzer = 'char_wb', binary = True, ngram_range = (4,4), max_features = 1000) 
