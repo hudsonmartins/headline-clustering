@@ -1,37 +1,7 @@
 import numpy as np
-import csv, glob, os, extract_features, nltk
-
-def create_sentences_csv():
-	fn = 'dataset/sentences.csv'		
-	remove = ['TO', 'IN', 'PRP', 'PRP$'] #Tags to remove undesired words
-	data = []
-	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
-	row_count = 0
-	for row in dataset:
-		if row_count == 0:
-			with open(fn, 'a') as csvfile:
-				writer = csv.writer(csvfile, delimiter = ',', quoting=csv.QUOTE_NONE)
-				writer.writerow(row)
-			row_count +=1
-			continue
-		tokens = nltk.word_tokenize(row[1])
-		tagged = nltk.pos_tag(tokens) #Getting tags
-		sentence = ''
-		
-		#Removing tags from the sentences
-		count_tag = 0
-		for tags in tagged:
-			if tags[1] not in remove:	
-				if count_tag != len(tagged) - 1:
-					sentence += tags[0]+' '
-				else:
-					sentence += tags[0]
-			count_tag += 1 			
-		row_count +=1
-				
-		with open(fn, 'a') as csvfile:
-			writer = csv.writer(csvfile, delimiter = ',', quoting=csv.QUOTE_NONE)
-			writer.writerow([row[0], sentence])
+import csv, glob, os, extract_features
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 
 def split_years_csv():
 	dataset = np.genfromtxt('dataset/sentences.csv', delimiter=',', dtype = None)
@@ -61,7 +31,7 @@ def get_headlines():
 		Collect the headlines from the csv file, returns as a list of strings
 	"""
 	data = []
-	dataset = np.genfromtxt('dataset/sentences.csv', delimiter=',', dtype = None)
+	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
 	row_count = 0
 	
 	for row in dataset:
@@ -71,9 +41,54 @@ def get_headlines():
 		data.append(row[1])
 		row_count +=1	
 	return data
+
+def clusterization(data, features, k):
+	#Clusterization
+	kmeans = KMeans(n_clusters = k, verbose = 1)
+	kmeans.fit(features)
+
+	print "Cost: ", kmeans.inertia_
+	print "Centers: ", kmeans.cluster_centers_
+
+	pred = kmeans.predict(features)
+	result_dict = dict()
+
+	i = 0
+	for result in pred:
+		if(result in result_dict):  #save in the dictionary
+			result_dict[result].append(data[i])
+		else:
+			result_dict[result] = [data[i]]
+		i += 1
+
+
+	for i in range(len(result_dict)):
+		print "Group ", i, " lenght ", len(result_dict[i])
+		count = 0
+		for sentence in result_dict[i]:
+			print sentence	
+			count += 1
+			if(count > 20):
+				print "..."
+				break
+	return kmeans
+	
+def elbow_rule(data, features):
+	k = 2
+	cost = []
+	while k < 20:
+		print "Clustering with k = ", k
+		kmeans = clusterization(data, features, k)
+		cost.append(kmeans.inertia_)
+		print "Final cost = ", kmeans.inertia_
+		k+=1
+		
+	x = np.arange(2, 20, 1)
+	plt.plot(x, cost)
+	plt.show()
 	
 
 data = get_headlines()
-#create_sentences_csv()
-#split_years_csv()
-extract_features.get_features_2gram(data)
+features = extract_features.get_features_4char_gram(data)
+elbow_rule(data, features)
+
