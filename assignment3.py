@@ -1,7 +1,11 @@
 import numpy as np
 import csv, glob, os, extract_features
-from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+
+
+
 
 def split_years_csv():
 	dataset = np.genfromtxt('dataset/sentences.csv', delimiter=',', dtype = None)
@@ -25,7 +29,7 @@ def split_years_csv():
 		else:
 			year += 1
 
-def get_headlines():
+def get_headlines(year=None):
 
 	"""
 		Collect the headlines from the csv file, returns as a list of strings
@@ -33,14 +37,23 @@ def get_headlines():
 	data = []
 	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
 	row_count = 0
-	
-	for row in dataset:
-		if row_count == 0:
-			row_count +=1
-			continue 			
-		data.append(row[1])
-		row_count +=1	
+	if year == None:
+		for row in dataset:
+			if row_count == 0:
+				row_count +=1
+				continue 			
+			data.append(row[1])
+			row_count +=1	
+	else:
+		for row in dataset:
+			if row_count == 0:
+				row_count +=1
+				continue
+			if str(year) == row[0][0:4]:			 			
+				data.append(row[1])
+				row_count +=1	
 	return data
+
 
 def clusterization(data, features, k):
 	#Clusterization
@@ -61,18 +74,29 @@ def clusterization(data, features, k):
 			result_dict[result] = [data[i]]
 		i += 1
 
-
+	
+	
 	for i in range(len(result_dict)):
 		print "Group ", i, " lenght ", len(result_dict[i])
 		count = 0
+		top_words = extract_features.get_top_n_words(20, result_dict[i])
+		print('Cluster '+str(i) + ' : ' + ', '.join(word for word in top_words))
+
+		"""
 		for sentence in result_dict[i]:
 			print sentence	
 			count += 1
 			if(count > 20):
 				print "..."
 				break
+		"""
+	#tsne_visulatization(kmeans.transform(features), k)
 	return kmeans
-	
+
+def tsne_visulatization(matrix, n_topics):
+	tsne = TSNE(n_components=2).fit_transform(matrix)
+	print tsne.shape
+
 def elbow_rule(data, features):
 	k = 2
 	cost = []
@@ -88,7 +112,10 @@ def elbow_rule(data, features):
 	plt.show()
 	
 
-data = get_headlines()
+
+data = get_headlines(year=2003)
+print "Number of headlines: ", len(data)
 features = extract_features.get_features_4char_gram(data)
-elbow_rule(data, features)
+clusterization(data, features,k=5)
+#elbow_rule(data, features)
 
