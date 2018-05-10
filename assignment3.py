@@ -1,12 +1,17 @@
 import numpy as np
 import csv, glob, os, extract_features
-from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+#<<<<<<< HEAD
 from sklearn.manifold import TSNE
 from sklearn.decomposition import LatentDirichletAllocation
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import Label
 from bokeh.io import output_notebook
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+from nltk.stem import PorterStemmer
+from nltk.stem.snowball import SnowballStemmer
+from nltk.tokenize import word_tokenize
 output_notebook()
 
 def split_years_csv():
@@ -31,7 +36,11 @@ def split_years_csv():
 		else:
 			year += 1
 
-def get_headlines():
+
+
+
+def get_headlines(year=None):
+#>>>>>>> e79f1e776d82fcb716fbd6a9473fce5ad5ffead5
 
 	"""
 		Collect the headlines from the csv file, returns as a list of strings
@@ -40,21 +49,57 @@ def get_headlines():
 	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
 	row_count = 0
 
+#<<<<<<< HEAD
 	for row in dataset:
 		if row_count == 0:
 			row_count +=1
 			continue
 		data.append(row[1])
 		row_count +=1
+#=======
+	if year == None:
+		print "Getting all headlines"
+		for row in dataset:
+			if row_count == 0:
+				row_count +=1
+				continue
+			sentence = get_root_sentence(row[1]) 			
+			data.append(sentence)
+			row_count +=1	
+	else:
+		print "Getting headlines from ", year
+		for row in dataset:
+			if row_count == 0:
+				row_count +=1
+				continue
+
+			if str(year) == row[0][0:4]:
+				sentence = get_root_sentence(row[1])
+				data.append(sentence)
+				row_count +=1	
+#>>>>>>> e79f1e776d82fcb716fbd6a9473fce5ad5ffead5
 	return data
+
+def get_root_sentence(sentence):
+	ps = SnowballStemmer("english")
+	words = word_tokenize(sentence)				 			
+	root_sentence = ''	
+
+	for word in words:
+		if len(word) < 3:
+			continue
+		root_sentence += ps.stem(word) + ' '
+		
+	return root_sentence
+
 
 def clusterization(data, features, k):
 	#Clusterization
 	kmeans = KMeans(n_clusters = k, verbose = 1)
 	kmeans.fit(features)
 
-	print "Cost: ", kmeans.inertia_
-	print "Centers: ", kmeans.cluster_centers_
+	print "Cost: ", kmeans.inertia_/features.shape[0]
+	#print "Centers: ", kmeans.cluster_centers_
 
 	pred = kmeans.predict(features)
 	result_dict = dict()
@@ -67,31 +112,45 @@ def clusterization(data, features, k):
 			result_dict[result] = [data[i]]
 		i += 1
 
-
+	
+	
 	for i in range(len(result_dict)):
 		print "Group ", i, " lenght ", len(result_dict[i])
 		count = 0
+		top_words = extract_features.get_top_n_words(20, result_dict[i])
+		print('Cluster '+str(i) + ' : ' + ', '.join(word for word in top_words))
+
+		"""
 		for sentence in result_dict[i]:
 			print sentence
 			count += 1
 			if(count > 20):
 				print "..."
 				break
+		"""
+	#tsne_visulatization(kmeans.transform(features), k)
 	return kmeans
 
+#<<<<<<< HEAD
 
 
 
 
-def elbow_rule(data, features):
+def tsne_visulatization(matrix, n_topics):
+	tsne = TSNE(n_components=2).fit_transform(matrix)
+	print tsne.shape
+
+def elbow_rule(data, features, max_k=10):
+#>>>>>>> e79f1e776d82fcb716fbd6a9473fce5ad5ffead5
 	k = 2
 	cost = []
-	while k < 20:
+	while k < max_k:
 		print "Clustering with k = ", k
 		kmeans = clusterization(data, features, k)
-		cost.append(kmeans.inertia_)
-		print "Final cost = ", kmeans.inertia_
+		cost.append(kmeans.inertia_/features.shape[0])
+		print "Final cost = ", kmeans.inertia_/features.shape[0]
 		k+=1
+#<<<<<<< HEAD
 
 	x = np.arange(2, 20, 1)
 	plt.plot(x, cost, 'b*-')
@@ -99,6 +158,11 @@ def elbow_rule(data, features):
 	plt.xlabel('Number of clusters')
 	plt.ylabel('Average within-cluster sum of squares')
 	plt.title('Elbow for KMeans clustering')
+#=======
+		
+	x = np.arange(2, max_k, 1)
+	plt.plot(x, cost)
+#>>>>>>> e79f1e776d82fcb716fbd6a9473fce5ad5ffead5
 	plt.show()
 
 
@@ -129,9 +193,21 @@ def create_TSNE(features,k = 7):
 
 
 
-data = get_headlines()
+#<<<<<<< HEAD
+# data = get_headlines()
+# features = extract_features.get_features_2gram(data)
+# elbow_rule(data, features)
+#=======
+#split_years_csv()
+data = get_headlines(year=2017)
+print data
+#print "Number of headlines: ", len(data)
 features = extract_features.get_features_2gram(data)
-elbow_rule(data, features)
+
+#features = extract_features.get_features_4char_gram(data)
+#clusterization(data, features,k=8)
+#elbow_rule(data, features, max_k=20)
+#>>>>>>> e79f1e776d82fcb716fbd6a9473fce5ad5ffead5
 
 # kmeans = clusterization(data,features,7)
 # create_TSNE(kmeans)
