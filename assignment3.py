@@ -1,5 +1,5 @@
 import numpy as np
-import csv, glob, os, extract_features
+import csv, glob, os, extract_features, random
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
@@ -7,18 +7,29 @@ from nltk.stem import PorterStemmer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import word_tokenize
 
-def get_headlines(year=None):
+def get_headlines(year=None, subset=None):
 
 	"""
 		Collect the headlines from the csv file, returns as a list of strings
 	"""
 	data = []
+	headlines = []
 	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
 	row_count = 0
-
+	if subset != None:
+		num_dados = int(len(dataset)*subset)
+		print "Getting a random subset with ", num_dados, " data"
+		for i in range(num_dados):
+			index = random.randrange(1, len(dataset))
+			sentence = dataset[index]
+			headlines.append(sentence)
+	else:
+		headlines = dataset
+		
 	if year == None:
-		print "Getting all headlines"
-		for row in dataset:
+		print "Getting headlines from all years"
+			
+		for row in headlines:
 			if row_count == 0:
 				row_count +=1
 				continue
@@ -27,7 +38,8 @@ def get_headlines(year=None):
 			row_count +=1	
 	else:
 		print "Getting headlines from ", year
-		for row in dataset:
+			
+		for row in headlines:
 			if row_count == 0:
 				row_count +=1
 				continue
@@ -49,7 +61,6 @@ def get_root_sentence(sentence):
 		root_sentence += ps.stem(word) + ' '
 		
 	return root_sentence
-
 
 def clusterization(data, features, k):
 	#Clusterization
@@ -90,9 +101,14 @@ def clusterization(data, features, k):
 	return kmeans
 
 def tsne_visulatization(matrix, n_topics):
+	print "Training t-sne..."
 	tsne = TSNE(n_components=2).fit_transform(matrix)
 	print tsne.shape
-
+	vis_x = tsne[:,0]
+	vis_y = tsne[:,1]
+	plt.scatter(vis_x, vis_y)
+	plt.show()
+	
 def elbow_rule(data, features, max_k=10):
 	k = 2
 	cost = []
@@ -109,7 +125,7 @@ def elbow_rule(data, features, max_k=10):
 	
 
 
-data = get_headlines(year=2017)
+data = get_headlines(subset=0.1)
 print "Number of headlines: ", len(data)
 features = extract_features.get_features_4char_gram(data)
 #clusterization(data, features,k=8)
