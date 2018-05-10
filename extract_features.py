@@ -7,10 +7,12 @@ def get_features_2gram(data):
 	"""
 		Creates a vector of normalized (tf-idf) features from a 2-gram bag of words
 	"""
-	vectorizer = CountVectorizer(analyzer = 'word', stop_words = 'english', binary = True, ngram_range = (2,2), max_features = 10000) 
+	vectorizer = CountVectorizer(analyzer = 'word', stop_words = 'english', binary = True, ngram_range = (2,2), max_features = 1000000)
 	features = vectorizer.fit_transform(data)
-	print vectorizer.get_feature_names()
+	#print vectorizer.get_feature_names()
 	return features
+
+
 	"""
 	steps = int(len(data)*0.001)
 	for i in range(0, len(data), steps):
