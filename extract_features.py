@@ -43,7 +43,7 @@ def get_features_4char_gram(data):
 		Creates a vector of normalized (tf-idf) features from a char-4-gram bag of words
 	"""
 	feat = []
-	vectorizer = TfidfVectorizer(analyzer = 'char_wb', stop_words = 'english', ngram_range = (4,4), max_features = 5000) 
+	vectorizer = TfidfVectorizer(analyzer = 'char_wb', stop_words = 'english', ngram_range = (4,4), max_features = 1000) 
 	feat = vectorizer.fit_transform(data)
 	return feat
 	#print vectorizer.get_feature_names()

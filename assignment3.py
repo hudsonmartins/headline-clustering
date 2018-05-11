@@ -112,22 +112,32 @@ def tsne_visulatization(matrix, n_topics):
 def elbow_rule(data, features, max_k=10):
 	k = 2
 	cost = []
+
 	while k < max_k:
 		print "Clustering with k = ", k
 		kmeans = clusterization(data, features, k)
 		cost.append(kmeans.inertia_/features.shape[0])
 		print "Final cost = ", kmeans.inertia_/features.shape[0]
 		k+=1
-		
-	x = np.arange(2, max_k, 1)
-	plt.plot(x, cost)
-	plt.show()
+	#x = np.arange(2, max_k, 1)
+	#plt.plot(x, cost)
+	
+	#plt.show()	
+	return cost		
+	
 	
 
 
-data = get_headlines(subset=0.1)
+data = get_headlines()
 print "Number of headlines: ", len(data)
 features = extract_features.get_features_4char_gram(data)
-#clusterization(data, features,k=8)
-elbow_rule(data, features, max_k=20)
-
+clusterization(data, features,k=8)
+"""
+for i in range(5):
+	cost = elbow_rule(data, features, max_k=20)
+	x = np.arange(2, 20, 1.0)
+	plt.plot(x, cost)
+plt.ylabel("Cost")
+plt.xlabel("Number of Clusters")
+plt.show()
+"""
