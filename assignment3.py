@@ -1,11 +1,15 @@
 import numpy as np
-import csv, glob, os, extract_features, random
+import csv, glob, os, extract_features, random, nltk
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 from nltk.stem import PorterStemmer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import word_tokenize
+from sklearn.metrics import silhouette_samples, silhouette_score
+from nltk.cluster import KMeansClusterer
+
+import matplotlib.cm as cm
 
 def get_headlines(year=None, subset=None):
 
@@ -16,18 +20,18 @@ def get_headlines(year=None, subset=None):
 	headlines = []
 	dataset = np.genfromtxt('dataset/news_headlines.csv', delimiter=',', dtype = None)
 	row_count = 0
-	if subset != None:
-		num_dados = int(len(dataset)*subset)
-		print "Getting a random subset with ", num_dados, " data"
-		for i in range(num_dados):
-			index = random.randrange(1, len(dataset))
-			sentence = dataset[index]
-			headlines.append(sentence)
-	else:
-		headlines = dataset
 		
 	if year == None:
 		print "Getting headlines from all years"
+		if subset != None:
+			num_dados = int(len(dataset)*subset)
+			print "Getting a random subset with ", num_dados, " data"
+			for i in range(num_dados):
+				index = random.randrange(1, len(dataset))
+				sentence = dataset[index]
+				headlines.append(sentence)
+		else:
+			headlines = dataset
 			
 		for row in headlines:
 			if row_count == 0:
@@ -38,12 +42,11 @@ def get_headlines(year=None, subset=None):
 			row_count +=1	
 	else:
 		print "Getting headlines from ", year
-			
+		headlines=dataset	
 		for row in headlines:
 			if row_count == 0:
 				row_count +=1
 				continue
-
 			if str(year) == row[0][0:4]:
 				sentence = get_root_sentence(row[1])
 				data.append(sentence)
@@ -58,8 +61,9 @@ def get_root_sentence(sentence):
 	for word in words:
 		if len(word) < 3:
 			continue
+		if word.isdigit():
+			continue
 		root_sentence += ps.stem(word) + ' '
-		
 	return root_sentence
 
 def clusterization(data, features, k):
@@ -71,8 +75,14 @@ def clusterization(data, features, k):
 	#print "Centers: ", kmeans.cluster_centers_
 
 	pred = kmeans.predict(features)
-	result_dict = dict()
+	
+	print ("Score:", kmeans.score(features))
+	#silhouette = silhouette_score(features, kmeans.labels_, metric='euclidean', sample_size = 10000)
+	 
+	#print ("Silhouette_score: ")
+	#print (silhouette)
 
+	result_dict = dict()
 	i = 0
 	for result in pred:
 		if(result in result_dict):  #save in the dictionary
@@ -82,15 +92,15 @@ def clusterization(data, features, k):
 		i += 1
 
 	
-	
 	for i in range(len(result_dict)):
 		print "Group ", i, " lenght ", len(result_dict[i])
 		count = 0
-		top_words = extract_features.get_top_n_words(20, result_dict[i])
+		top_words = extract_features.get_top_n_words(30, result_dict[i])
 		print('Cluster '+str(i) + ' : ' + ', '.join(word for word in top_words))
-
-		"""
-		for sentence in result_dict[i]:
+		
+		top_bigrams = extract_features.get_top_grams(30, result_dict[i], '2word')
+		print('Cluster '+str(i) + ' : ' + ', '.join(word for word in top_bigrams))
+		"""for sentence in result_dict[i]:
 			print sentence	
 			count += 1
 			if(count > 20):
@@ -112,31 +122,34 @@ def tsne_visulatization(matrix, n_topics):
 def elbow_rule(data, features, max_k=10):
 	k = 2
 	cost = []
-
 	while k < max_k:
 		print "Clustering with k = ", k
 		kmeans = clusterization(data, features, k)
 		cost.append(kmeans.inertia_/features.shape[0])
 		print "Final cost = ", kmeans.inertia_/features.shape[0]
 		k+=1
-	#x = np.arange(2, max_k, 1)
-	#plt.plot(x, cost)
-	
-	#plt.show()	
+	x = np.arange(2, 20, 1.0)
+	plt.plot(x, cost)
+	plt.ylabel("Cost")
+	plt.xlabel("Number of Clusters")
+	plt.show()	
 	return cost		
 	
-	
-
-
-data = get_headlines()
+data = get_headlines(year=2009)
 print "Number of headlines: ", len(data)
 features = extract_features.get_features_4char_gram(data)
-clusterization(data, features,k=8)
+clusterization(data, features, k = 5)
+#elbow_rule(data, features, max_k=20)
 """
+sub = 0.1
 for i in range(5):
+	data = get_headlines(subset = sub)
+	print "Number of headlines: ", len(data)
+	features = extract_features.get_features_4char_gram(data)
 	cost = elbow_rule(data, features, max_k=20)
 	x = np.arange(2, 20, 1.0)
 	plt.plot(x, cost)
+	sub += 0.05
 plt.ylabel("Cost")
 plt.xlabel("Number of Clusters")
 plt.show()
